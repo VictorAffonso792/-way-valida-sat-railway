@@ -750,13 +750,7 @@ async function executar() {
     }
 
     jobId = data.jobId;
-
-    // Mostra instrução para rodar o bridge no PC local
-    const origem = window.location.origin;
-    addLogLine({ ts: agora(), msg: '🔗 Job criado! Para iniciar rode no seu PC:', tipo: 'warn' });
-    addLogLine({ ts: agora(), msg: `node agente-bridge.js ${origem} "${dadosExtraidos.textoOS.replace(/\n/g,' ')}"`, tipo: 'info' });
-    addLogLine({ ts: agora(), msg: '⏳ Aguardando conexão do agente...', tipo: 'info' });
-
+    addLogLine({ ts: agora(), msg: '⏳ Aguardando watcher local...', tipo: 'info' });
     iniciarPolling();
 
   } catch(e) {
