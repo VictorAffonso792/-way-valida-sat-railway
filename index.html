@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Way Valida SAT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --azul:     #1a2b4e;
+  --azul-med: #243756;
+  --azul-clr: #2d4470;
+  --laranja:  #FF6B1A;
+  --laranja2: #e85d04;
+  --cinza-bg: #ebebeb;
+  --cinza-pt: #999;
+  --cinza-ln: #bbb;
+  --branco:   #ffffff;
+  --texto:    #1a2b4e;
+  --texto2:   #5a6a85;
+  --borda:    #dde3ee;
+  --verde:    #16a34a;
+  --verde-bg: #f0fdf4;
+  --vermelho: #dc2626;
+  --verm-bg:  #fef2f2;
+  --amarelo:  #d97706;
+  --log-bg:   #0f172a;
+  --log-verde:#22c55e;
+  --log-verm: #f87171;
+  --log-cin:  #94a3b8;
+  --log-amar: #fbbf24;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: var(--cinza-bg);
+}
+
+/* ── PAINEL ESQUERDO ── */
+.left {
+  width: 38%;
+  min-width: 320px;
+  background: var(--cinza-bg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.left-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  user-select: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.logo-way {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--azul);
+  letter-spacing: -1px;
+}
+
+.logo-valida {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--laranja);
+  letter-spacing: -1px;
+}
+
+.logo-sat {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--azul);
+  margin-left: 6px;
+  letter-spacing: 2px;
+  opacity: .7;
+}
+
+.tagline {
+  font-size: 13px;
+  color: var(--cinza-pt);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.version {
+  font-size: 11px;
+  color: #bbb;
+  letter-spacing: .5px;
+}
+
+/* ── PAINEL DIREITO ── */
+.right {
+  flex: 1;
+  background: var(--branco);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.06);
+}
+
+/* ── HEADER DIREITO ── */
+.right-header {
+  background: var(--azul);
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.right-header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: .3px;
+}
+
+.right-header-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 2px;
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.status-badge.idle    { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+.status-badge.running { background: rgba(251,191,36,0.2);  color: #fbbf24; animation: pulse 1.5s infinite; }
+.status-badge.done    { background: rgba(34,197,94,0.2);   color: #22c55e; }
+.status-badge.error   { background: rgba(248,113,113,0.2); color: #f87171; }
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .5; }
+}
+
+/* ── CONTEÚDO PRINCIPAL ── */
+.right-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* ── PAINEL INPUT ── */
+#panel-input { display: block; }
+#panel-output { display: none; }
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--texto);
+  margin-bottom: 4px;
+}
+
+.section-sub {
+  font-size: 13px;
+  color: var(--texto2);
+  margin-bottom: 20px;
+}
+
+/* TEXTAREA */
+.textarea-wrap { position: relative; margin-bottom: 16px; }
+
+.lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--laranja);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+textarea {
+  width: 100%;
+  min-height: 140px;
+  background: #fafafa;
+  border: 1.5px solid var(--borda);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--texto);
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+textarea::placeholder { color: #bbb; }
+textarea:focus {
+  border-color: var(--laranja);
+  box-shadow: 0 0 0 3px rgba(255,107,26,0.1);
+  background: white;
+}
+
+/* CAMPOS EXTRAÍDOS */
+.extracted-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.extracted-field { display: flex; flex-direction: column; gap: 4px; }
+
+.ext-input {
+  background: #f8f9ff;
+  border: 1.5px solid var(--borda);
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--texto);
+  outline: none;
+  transition: border-color .2s;
+  cursor: default;
+}
+
+.ext-input.filled { border-color: rgba(255,107,26,0.4); background: white; }
+
+/* BOTÕES */
+.btn-row { display: flex; gap: 10px; }
+
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: .2px;
+}
+
+.btn-primary {
+  flex: 1;
+  background: var(--azul);
+  color: white;
+  justify-content: center;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--azul-clr);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26,43,78,0.2);
+}
+
+.btn-primary:disabled {
+  background: #c5ccd8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: #f1f3f8;
+  color: var(--texto2);
+  border: 1px solid var(--borda);
+}
+
+.btn-secondary:hover { background: #e8ebf2; color: var(--texto); }
+
+/* ── PAINEL OUTPUT ── */
+.os-info-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.os-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f1f3f8;
+  color: var(--texto2);
+  border: 1px solid var(--borda);
+}
+
+.os-pill.destaque {
+  background: rgba(26,43,78,0.08);
+  color: var(--azul);
+  font-weight: 600;
+  border-color: rgba(26,43,78,0.15);
+}
+
+/* PROGRESS BAR */
+.progress-wrap {
+  height: 4px;
+  background: #f1f3f8;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--laranja), var(--laranja2));
+  border-radius: 2px;
+  width: 0%;
+  transition: width .5s ease;
+}
+
+.progress-fill.running { animation: progressAnim 2s linear infinite; }
+
+@keyframes progressAnim {
+  0%   { width: 20%; margin-left: -20%; }
+  100% { width: 20%; margin-left: 100%; }
+}
+
+/* LOG TERMINAL */
+.log-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--texto2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-box {
+  background: var(--log-bg);
+  border-radius: 8px;
+  padding: 14px 16px;
+  height: 320px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.log-box::-webkit-scrollbar { width: 4px; }
+.log-box::-webkit-scrollbar-track { background: transparent; }
+.log-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.log-line { display: flex; gap: 10px; }
+.log-ts   { color: rgba(255,255,255,0.2); font-size: 11px; flex-shrink: 0; }
+.log-msg.info    { color: var(--log-cin); }
+.log-msg.success { color: var(--log-verde); }
+.log-msg.error   { color: var(--log-verm); }
+.log-msg.warn    { color: var(--log-amar); }
+
+.log-empty {
+  color: rgba(255,255,255,0.15);
+  font-size: 12px;
+  text-align: center;
+  padding-top: 120px;
+}
+
+/* RESULTADO FINAL */
+.resultado-card {
+  margin-top: 16px;
+  padding: 20px 24px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: fadeIn .4s ease;
+}
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+.resultado-card.aprovado {
+  background: var(--verde-bg);
+  border: 1.5px solid rgba(22,163,74,0.3);
+}
+
+.resultado-card.reprovado {
+  background: var(--verm-bg);
+  border: 1.5px solid rgba(220,38,38,0.3);
+}
+
+.resultado-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.resultado-titulo {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.resultado-card.aprovado .resultado-titulo { color: var(--verde); }
+.resultado-card.reprovado .resultado-titulo { color: var(--vermelho); }
+
+.resultado-motivo {
+  font-size: 13px;
+  color: var(--texto2);
+  margin-top: 2px;
+}
+
+/* BTN NOVA VALIDAÇÃO */
+.btn-nova {
+  margin-top: 16px;
+  width: 100%;
+  background: var(--azul);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.btn-nova:hover { background: var(--azul-clr); }
+
+/* PAINEL DE DECISÃO */
+.decisao-card {
+  margin-top: 16px;
+  background: #fff8f0;
+  border: 1.5px solid rgba(255,107,26,0.3);
+  border-radius: 10px;
+  padding: 18px 20px;
+  animation: fadeIn .35s ease;
+  display: none;
+}
+.decisao-card.show { display: block; }
+.decisao-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--texto);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.decisao-btns {
+  display: flex;
+  gap: 10px;
+}
+.btn-decisao {
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-decisao:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.btn-decisao:active { transform: translateY(0); }
+.btn-decisao.aprovar   { background: #16a34a; color: white; }
+.btn-decisao.reprovar  { background: #dc2626; color: white; }
+.btn-decisao.cancelar  { background: #6b7280; color: white; }
+.btn-decisao:disabled  { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* SCROLLBAR GERAL */
+.right-body::-webkit-scrollbar { width: 5px; }
+.right-body::-webkit-scrollbar-track { background: transparent; }
+.right-body::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 3px; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .left { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── PAINEL ESQUERDO ── -->
+<div class="left">
+  <canvas id="particles-canvas"></canvas>
+  <div class="left-content">
+    <div class="logo">
+      <span class="logo-way">Way</span>
+      <span class="logo-valida">VALIDA</span>
+      <span class="logo-sat">SAT</span>
+    </div>
+    <div class="tagline">Automatize. Valide. Finalize.</div>
+    <div class="version">v1.0 — Uso Interno</div>
+  </div>
+</div>
+
+<!-- ── PAINEL DIREITO ── -->
+<div class="right">
+
+  <!-- Header -->
+  <div class="right-header">
+    <div>
+      <div class="right-header-title">Nova Validação SAT</div>
+      <div class="right-header-sub">Cole o protocolo do MatrixGo e execute</div>
+    </div>
+    <span class="status-badge idle" id="status-badge">Aguardando</span>
+  </div>
+
+  <!-- Body -->
+  <div class="right-body">
+
+    <!-- INPUT -->
+    <div id="panel-input">
+      <div class="section-title">Protocolo da OS</div>
+      <div class="section-sub">Cole o texto completo recebido do MatrixGo</div>
+
+      <div class="textarea-wrap">
+        <label class="lbl">Texto do MatrixGo</label>
+        <textarea id="texto-os" rows="6"
+          placeholder="Nº do Contrato: 112717
+Protocolo: Protocolo 3974027 - SOLICITAÇÃO - INSTALAÇÃO / INSTALAÇÃO - PADRÃO - CONDOMINIO - IVONE ALVES VIANA"
+          oninput="extrairDados()"></textarea>
+      </div>
+
+      <div class="extracted-grid">
+        <div class="extracted-field">
+          <label class="lbl">Contrato</label>
+          <input class="ext-input" id="f-contrato" readonly placeholder="—" />
+        </div>
+        <div class="extracted-field">
+          <label class="lbl">Tipo</label>
+          <input class="ext-input" id="f-tipo" readonly placeholder="—" />
+        </div>
+        <div class="extracted-field" style="grid-column:1/-1">
+          <label class="lbl">Cliente</label>
+          <input class="ext-input" id="f-cliente" readonly placeholder="—" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-executar" onclick="executar()" disabled>
+          ▶ Iniciar Validação
+        </button>
+        <button class="btn btn-secondary" onclick="limpar()">✕ Limpar</button>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div id="panel-output">
+
+      <div class="os-info-bar" id="os-info-bar"></div>
+
+      <div class="progress-wrap">
+        <div class="progress-fill running" id="progress-fill"></div>
+      </div>
+
+      <div class="log-label">
+        Log em tempo real
+        <span id="log-count" style="font-weight:400;color:#bbb;font-size:10px">0 linhas</span>
+      </div>
+      <div class="log-box" id="log-box">
+        <div class="log-empty" id="log-empty">Aguardando início...</div>
+      </div>
+
+      <!-- PAINEL DE DECISÃO -->
+      <div class="decisao-card" id="decisao-card">
+        <div class="decisao-titulo">⚖️ Laudo gerado — Qual a decisão?</div>
+        <div class="decisao-btns">
+          <button class="btn-decisao aprovar"  onclick="enviarDecisao('aprovado')">✅ Aprovar</button>
+          <button class="btn-decisao reprovar" onclick="enviarDecisao('reprovado')">❌ Reprovar</button>
+          <button class="btn-decisao cancelar" onclick="enviarDecisao('cancelado')">✕ Cancelar</button>
+        </div>
+      </div>
+
+      <div id="resultado-wrap"></div>
+
+      <button class="btn-nova" onclick="novaValidacao()" id="btn-nova" style="display:none">
+        ↺ Nova Validação
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── PARTÍCULAS ───────────────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('particles-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles;
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function criarParticulas(n) {
+    return Array.from({ length: n }, () => ({
+      x:  Math.random() * W,
+      y:  Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: (Math.random() - 0.5) * 0.7,
+      r:  Math.random() * 2 + 1.5,
+    }));
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Conectar partículas próximas
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        if (d < 130) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(153,153,153,${1 - d/130})`;
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Desenhar e mover partículas
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.fillStyle = '#999';
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', () => { resize(); particles = criarParticulas(65); });
+  resize();
+  particles = criarParticulas(65);
+  frame();
+})();
+
+// ── EXTRAÇÃO DE DADOS ────────────────────────────────────────────────────────
+let dadosExtraidos = null;
+
+function extrairDados() {
+  const txt = document.getElementById('texto-os').value;
+
+  const contratoM  = txt.match(/N[°º]?\s*(?:do\s*)?Contrato[:\s]+(\d+)/i);
+  const protocoloM = txt.match(/Protocolo[:\s]+(.+)/i);
+
+  const contrato  = contratoM  ? contratoM[1]  : '';
+  const protocolo = protocoloM ? protocoloM[1] : '';
+
+  let tipo = 'manutencao';
+  if (/instala[çc][aã]o/i.test(protocolo)) tipo = 'instalacao';
+
+  const partes  = protocolo.split(' - ');
+  const cliente = protocolo ? partes[partes.length - 1].trim().toUpperCase() : '';
+
+  // Atualiza campos
+  setField('f-contrato', contrato);
+  setField('f-tipo',     tipo === 'instalacao' ? 'INSTALAÇÃO' : 'MANUTENÇÃO');
+  setField('f-cliente',  cliente);
+
+  dadosExtraidos = contrato ? { contrato, tipo, cliente, textoOS: txt.trim() } : null;
+
+  // Habilita botão
+  document.getElementById('btn-executar').disabled = !dadosExtraidos;
+}
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  el.value = val;
+  el.classList.toggle('filled', !!val);
+}
+
+// ── EXECUTAR ─────────────────────────────────────────────────────────────────
+let jobId        = null;
+let pollingTimer = null;
+
+async function executar() {
+  if (!dadosExtraidos) return;
+
+  // Monta info bar
+  const bar = document.getElementById('os-info-bar');
+  bar.innerHTML = `
+    <span class="os-pill destaque">Contrato ${dadosExtraidos.contrato}</span>
+    <span class="os-pill">${dadosExtraidos.tipo === 'instalacao' ? '🔧 Instalação' : '🔨 Manutenção'}</span>
+    <span class="os-pill">${dadosExtraidos.cliente}</span>
+  `;
+
+  // Alterna painéis
+  document.getElementById('panel-input').style.display  = 'none';
+  document.getElementById('panel-output').style.display = 'block';
+  document.getElementById('resultado-wrap').innerHTML   = '';
+  document.getElementById('btn-nova').style.display     = 'none';
+  document.getElementById('log-box').innerHTML          = '<div class="log-empty" id="log-empty">Iniciando agente...</div>';
+  document.getElementById('log-count').textContent      = '0 linhas';
+
+  setBadge('running', '● Executando');
+  setProgress('running');
+
+  try {
+    const res  = await fetch('/executar', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ textoOS: dadosExtraidos.textoOS }),
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      addLogLine({ ts: agora(), msg: '❌ ' + (data.erro || 'Erro ao iniciar'), tipo: 'error' });
+      setBadge('error', '✗ Falha');
+      return;
+    }
+
+    jobId = data.jobId;
+
+    // Mostra instrução para rodar o bridge no PC local
+    const origem = window.location.origin;
+    addLogLine({ ts: agora(), msg: '🔗 Job criado! Para iniciar rode no seu PC:', tipo: 'warn' });
+    addLogLine({ ts: agora(), msg: `node agente-bridge.js ${origem} "${dadosExtraidos.textoOS.replace(/\n/g,' ')}"`, tipo: 'info' });
+    addLogLine({ ts: agora(), msg: '⏳ Aguardando conexão do agente...', tipo: 'info' });
+
+    iniciarPolling();
+
+  } catch(e) {
+    addLogLine({ ts: agora(), msg: '❌ Servidor não encontrado.', tipo: 'error' });
+    setBadge('error', '✗ Offline');
+    setProgress('');
+  }
+}
+
+function iniciarPolling() {
+  let lastCount = 0;
+  pollingTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`/status/${jobId}`);
+      const data = await res.json();
+
+      // Adiciona logs novos
+      if (data.logs && data.logs.length > lastCount) {
+        const novos = data.logs.slice(lastCount);
+        const box   = document.getElementById('log-box');
+        const empty = document.getElementById('log-empty');
+        if (empty) empty.remove();
+        novos.forEach(addLogLine);
+        box.scrollTop = box.scrollHeight;
+        lastCount = data.logs.length;
+        document.getElementById('log-count').textContent = `${lastCount} linha${lastCount !== 1 ? 's' : ''}`;
+      }
+
+      // Detecta aguardo de decisão do operador
+      if (data.status === 'aguardando_decisao') {
+        mostrarPainelDecisao();
+      } else {
+        // Esconde o painel se não está aguardando
+        const card = document.getElementById('decisao-card');
+        if (card && data.status === 'running') card.classList.remove('show');
+      }
+
+      if (data.status === 'done' || data.status === 'error') {
+        clearInterval(pollingTimer);
+        document.getElementById('decisao-card').classList.remove('show');
+        finalizarJob(data);
+      }
+    } catch(e) {
+      // ignora erros de polling
+    }
+  }, 800);
+}
+
+function finalizarJob(data) {
+  setProgress('');
+
+  if (data.resultado === 'aprovado') {
+    setBadge('done', '✓ Concluído');
+    document.getElementById('resultado-wrap').innerHTML = `
+      <div class="resultado-card aprovado">
+        <div class="resultado-icon">✅</div>
+        <div>
+          <div class="resultado-titulo">OS Aprovada</div>
+          <div class="resultado-motivo">Validação concluída com sucesso.</div>
+        </div>
+      </div>`;
+  } else if (data.resultado === 'reprovado') {
+    setBadge('error', '✗ Reprovado');
+    document.getElementById('resultado-wrap').innerHTML = `
+      <div class="resultado-card reprovado">
+        <div class="resultado-icon">❌</div>
+        <div>
+          <div class="resultado-titulo">OS Reprovada</div>
+          <div class="resultado-motivo">${data.motivo || 'Verifique o log para detalhes.'}</div>
+        </div>
+      </div>`;
+  } else {
+    setBadge(data.status === 'error' ? 'error' : 'done',
+             data.status === 'error' ? '✗ Erro' : '✓ Finalizado');
+  }
+
+  document.getElementById('btn-nova').style.display = 'block';
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function addLogLine(entry) {
+  const box  = document.getElementById('log-box');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-ts">[${entry.ts}]</span><span class="log-msg ${entry.tipo || 'info'}">${escHtml(entry.msg)}</span>`;
+  box.appendChild(line);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function agora() {
+  return new Date().toLocaleTimeString('pt-BR', { hour12: false });
+}
+
+function setBadge(cls, txt) {
+  const b = document.getElementById('status-badge');
+  b.className = `status-badge ${cls}`;
+  b.textContent = txt;
+}
+
+function setProgress(cls) {
+  const p = document.getElementById('progress-fill');
+  p.className = 'progress-fill' + (cls ? ` ${cls}` : '');
+  p.style.width = cls ? '' : '100%';
+  setTimeout(() => { if (!cls) p.style.width = '0%'; }, 300);
+}
+
+function mostrarPainelDecisao() {
+  const card = document.getElementById('decisao-card');
+  if (!card.classList.contains('show')) {
+    card.classList.add('show');
+    // Scroll para o painel
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setBadge('running', '⚖️ Aguardando decisão');
+  }
+}
+
+async function enviarDecisao(decisao) {
+  if (!jobId) return;
+  // Desabilita botões enquanto processa
+  document.querySelectorAll('.btn-decisao').forEach(b => b.disabled = true);
+  try {
+    const res  = await fetch(`/decisao/${jobId}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ decisao }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('decisao-card').classList.remove('show');
+      setBadge('running', '● Executando');
+      addLogLine({ ts: agora(), msg: `📋 Decisão: ${decisao.toUpperCase()}`, tipo: 'success' });
+    } else {
+      addLogLine({ ts: agora(), msg: `⚠️ Erro ao enviar decisão: ${data.erro}`, tipo: 'warn' });
+      document.querySelectorAll('.btn-decisao').forEach(b => b.disabled = false);
+    }
+  } catch(e) {
+    addLogLine({ ts: agora(), msg: '❌ Erro de conexão ao enviar decisão', tipo: 'error' });
+    document.querySelectorAll('.btn-decisao').forEach(b => b.disabled = false);
+  }
+}
+
+function novaValidacao() {
+  clearInterval(pollingTimer);
+  jobId = null;
+  document.getElementById('panel-input').style.display  = 'block';
+  document.getElementById('panel-output').style.display = 'none';
+  document.getElementById('decisao-card').classList.remove('show');
+  setBadge('idle', 'Aguardando');
+}
+
+function limpar() {
+  document.getElementById('texto-os').value = '';
+  ['f-contrato','f-tipo','f-cliente'].forEach(id => setField(id,''));
+  document.getElementById('btn-executar').disabled = true;
+  dadosExtraidos = null;
+}
+</script>
+</body>
+</html>
