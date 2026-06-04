@@ -10,12 +10,14 @@ const PORT = process.env.PORT || 3333;
 // ─── Jobs em memória ─────────────────────────────────────────────────────────
 const jobs = new Map();
 
-function criarJob(id) {
+function criarJob(id, textoOS) {
   jobs.set(id, {
     status: 'aguardando_agente',
     logs: [],
     resultado: null,
     motivo: null,
+    textoOS: textoOS,       // guarda para o watcher buscar
+    coletado: false,        // watcher já pegou?
   });
   return jobs.get(id);
 }
@@ -60,10 +62,9 @@ const server = http.createServer((req, res) => {
         const { textoOS } = JSON.parse(body);
         if (!textoOS || !textoOS.trim()) { responder(res, 400, { erro: 'textoOS é obrigatório' }); return; }
         const jobId = Date.now().toString();
-        const job   = criarJob(jobId);
-        addLog(job, '🚀 Job criado — aguardando agente local...', 'info');
-        addLog(job, '💻 Execute no seu PC: node src/agente.js com o jobId: ' + jobId, 'warn');
-        responder(res, 200, { ok: true, jobId, textoOS: textoOS.trim() });
+        const job   = criarJob(jobId, textoOS.trim());
+        addLog(job, '🚀 Aguardando watcher local...', 'info');
+        responder(res, 200, { ok: true, jobId });
       } catch (e) {
         responder(res, 400, { erro: 'JSON inválido' });
       }
@@ -157,6 +158,20 @@ const server = http.createServer((req, res) => {
     } else {
       responder(res, 200, { decisao: null });
     }
+    return;
+  }
+
+  // GET /jobs-pendentes → watcher busca jobs aguardando execução
+  if (req.method === 'GET' && url === '/jobs-pendentes') {
+    const pendentes = [];
+    for (const [jobId, job] of jobs.entries()) {
+      if (job.status === 'aguardando_agente' && !job.coletado) {
+        job.coletado = true;  // marca como coletado
+        job.status   = 'running';
+        pendentes.push({ jobId, textoOS: job.textoOS });
+      }
+    }
+    responder(res, 200, { jobs: pendentes });
     return;
   }
 
