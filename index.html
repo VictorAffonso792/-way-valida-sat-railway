@@ -843,7 +843,33 @@ function addLogLine(entry) {
   line.innerHTML = `<span class="log-ts">[${entry.ts}]</span><span class="log-msg ${entry.tipo || 'info'}">${escHtml(entry.msg)}</span>`;
   box.appendChild(line);
 
-  // Se tiver imagem, exibe miniatura abaixo da linha
+  // Se tiver link de foto, exibe botão clicável
+  if (entry.link) {
+    const linkDiv = document.createElement('div');
+    linkDiv.style.cssText = 'margin: 2px 0 4px 36px;';
+    const a = document.createElement('a');
+    a.href = entry.link;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '🖼️ Abrir foto';
+    a.style.cssText = `
+      display: inline-block;
+      font-size: 12px;
+      color: var(--laranja);
+      background: rgba(255,107,26,0.1);
+      border: 1px solid rgba(255,107,26,0.3);
+      border-radius: 5px;
+      padding: 3px 10px;
+      text-decoration: none;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    `;
+    a.onmouseover = () => a.style.background = 'rgba(255,107,26,0.2)';
+    a.onmouseout  = () => a.style.background = 'rgba(255,107,26,0.1)';
+    linkDiv.appendChild(a);
+    box.appendChild(linkDiv);
+  }
+  // Se tiver imagem base64, exibe miniatura
   if (entry.imagem) {
     const img = document.createElement('img');
     img.className = 'log-foto';
