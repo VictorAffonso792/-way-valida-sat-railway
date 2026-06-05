@@ -849,7 +849,16 @@ function addLogLine(entry) {
     img.className = 'log-foto';
     img.src = `data:image/png;base64,${entry.imagem}`;
     img.title = entry.msg;
-    img.onclick = () => window.open(img.src, '_blank');
+    img.style.cursor = 'pointer';
+    img.onclick = () => {
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
     box.appendChild(img);
   }
 }
