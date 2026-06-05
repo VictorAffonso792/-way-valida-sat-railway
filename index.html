@@ -374,6 +374,8 @@ textarea:focus {
 .log-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
 .log-line { display: flex; gap: 10px; }
+.log-foto { display: block; max-width: 180px; max-height: 130px; border-radius: 6px; margin: 4px 0 4px 36px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; object-fit: cover; }
+.log-foto:hover { border-color: var(--laranja); transform: scale(1.02); transition: transform .15s; }
 .log-ts   { color: rgba(255,255,255,0.2); font-size: 11px; flex-shrink: 0; }
 .log-msg.info    { color: var(--log-cin); }
 .log-msg.success { color: var(--log-verde); }
@@ -833,10 +835,23 @@ function finalizarJob(data) {
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function addLogLine(entry) {
   const box  = document.getElementById('log-box');
+  const empty = document.getElementById('log-empty');
+  if (empty) empty.remove();
+
   const line = document.createElement('div');
   line.className = 'log-line';
   line.innerHTML = `<span class="log-ts">[${entry.ts}]</span><span class="log-msg ${entry.tipo || 'info'}">${escHtml(entry.msg)}</span>`;
   box.appendChild(line);
+
+  // Se tiver imagem, exibe miniatura abaixo da linha
+  if (entry.imagem) {
+    const img = document.createElement('img');
+    img.className = 'log-foto';
+    img.src = `data:image/png;base64,${entry.imagem}`;
+    img.title = entry.msg;
+    img.onclick = () => window.open(img.src, '_blank');
+    box.appendChild(img);
+  }
 }
 
 function escHtml(s) {

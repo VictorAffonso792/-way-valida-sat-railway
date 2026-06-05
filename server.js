@@ -81,7 +81,7 @@ const server = http.createServer((req, res) => {
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
       try {
-        const { msg, tipo } = JSON.parse(body);
+        const { msg, tipo, imagem } = JSON.parse(body);
         if (!job) { responder(res, 404, { erro: 'Job não encontrado' }); return; }
         // Detecta sinal de aguardo de decisão
         if (msg && msg.includes('__AGUARDANDO_DECISAO__')) {
@@ -89,7 +89,10 @@ const server = http.createServer((req, res) => {
           addLog(job, '⚖️ Laudo gerado — aguardando decisão', 'warn');
         } else if (msg) {
           job.status = 'running';
-          addLog(job, msg, tipo || 'info');
+          // Guarda imagem base64 se existir
+          const entry = { ts: new Date().toLocaleTimeString('pt-BR', { hour12: false }), msg, tipo: tipo || 'info' };
+          if (imagem) entry.imagem = imagem;
+          job.logs.push(entry);
         }
         responder(res, 200, { ok: true });
       } catch (e) {
