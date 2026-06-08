@@ -740,7 +740,7 @@ async function executar() {
   try {
     const res  = await fetch('/executar', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body:    JSON.stringify({ textoOS: dadosExtraidos.textoOS }),
     });
     const data = await res.json();

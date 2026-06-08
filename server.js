@@ -5,10 +5,39 @@ const http    = require('http');
 const fs      = require('fs');
 const path    = require('path');
 
-const PORT = process.env.PORT || 3333;
+const PORT         = process.env.PORT || 3333;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN || '';
+const JOBS_FILE    = '/tmp/way-jobs.json';
 
-// ─── Jobs em memória ─────────────────────────────────────────────────────────
-const jobs = new Map();
+// ─── Autenticação ─────────────────────────────────────────────────────────────
+function verificarToken(req) {
+  if (!ACCESS_TOKEN) return true;
+  const auth  = req.headers['authorization'] || '';
+  const query = (() => { try { return new URL(req.url, 'http://localhost').searchParams.get('token') || ''; } catch { return ''; } })();
+  return auth === `Bearer ${ACCESS_TOKEN}` || query === ACCESS_TOKEN;
+}
+
+// ─── Jobs com persistência ────────────────────────────────────────────────────
+function carregarJobs() {
+  try {
+    if (require('fs').existsSync(JOBS_FILE)) {
+      return new Map(Object.entries(JSON.parse(require('fs').readFileSync(JOBS_FILE, 'utf-8'))));
+    }
+  } catch {}
+  return new Map();
+}
+
+function salvarJobs() {
+  try {
+    const obj = {};
+    for (const [k, v] of jobs.entries()) {
+      obj[k] = { ...v, logs: (v.logs || []).map(l => ({ ts: l.ts, msg: l.msg, tipo: l.tipo })) };
+    }
+    require('fs').writeFileSync(JOBS_FILE, JSON.stringify(obj));
+  } catch {}
+}
+
+const jobs = carregarJobs();
 
 function criarJob(id, textoOS) {
   jobs.set(id, {
@@ -25,6 +54,7 @@ function criarJob(id, textoOS) {
 function addLog(job, msg, tipo = 'info') {
   const ts = new Date().toLocaleTimeString('pt-BR', { hour12: false });
   job.logs.push({ ts, msg, tipo });
+  salvarJobs();
 }
 
 // ─── Roteador HTTP ────────────────────────────────────────────────────────────
@@ -55,6 +85,7 @@ const server = http.createServer((req, res) => {
 
   // POST /executar → cria job e aguarda agente externo
   if (req.method === 'POST' && url === '/executar') {
+    if (!verificarToken(req)) { responder(res, 401, { erro: 'Não autorizado' }); return; }
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
