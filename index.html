@@ -711,6 +711,27 @@ function setField(id, val) {
   el.classList.toggle('filled', !!val);
 }
 
+// ── TOKEN DE ACESSO ──────────────────────────────────────────────────────────
+const urlToken = new URLSearchParams(window.location.search).get('token') || '';
+if (urlToken) sessionStorage.setItem('waytoken', urlToken);
+const TOKEN = urlToken || sessionStorage.getItem('waytoken') || '';
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    ...(TOKEN ? { 'Authorization': 'Bearer ' + TOKEN } : {})
+  };
+}
+
+// Redireciona para pedir token se não tiver
+if (!TOKEN) {
+  const t = prompt('Token de acesso:');
+  if (t) {
+    sessionStorage.setItem('waytoken', t);
+    window.location.href = window.location.pathname + '?token=' + encodeURIComponent(t);
+  }
+}
+
 // ── EXECUTAR ─────────────────────────────────────────────────────────────────
 let jobId        = null;
 let pollingTimer = null;
