@@ -822,7 +822,7 @@ function iniciarPolling() {
   }, 800);
 }
 
-function finalizarJob(data) {
+async function finalizarJob(data) {
   setProgress('');
 
   if (data.resultado === 'aprovado') {
@@ -852,34 +852,57 @@ function finalizarJob(data) {
 
   document.getElementById('btn-nova').style.display = 'block';
 
-  // Botão de revalidação
+  // Busca itens que falharam e monta botões de re-validação seletiva
   const wrapResultado = document.getElementById('resultado-wrap');
-  const divRevalidar = document.createElement('div');
-  divRevalidar.style.cssText = 'margin-top: 10px; text-align: center;';
-  const btnRevalidar = document.createElement('button');
-  btnRevalidar.textContent = '🔄 Validar novamente';
-  btnRevalidar.style.cssText = 'background: rgba(255,255,255,0.08); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); border-radius: var(--border-radius-md); padding: 7px 18px; font-size: 12px; cursor: pointer; font-family: inherit;';
-  btnRevalidar.onmouseover = () => btnRevalidar.style.background = 'rgba(255,255,255,0.14)';
-  btnRevalidar.onmouseout  = () => btnRevalidar.style.background = 'rgba(255,255,255,0.08)';
-  btnRevalidar.onclick = async () => {
-    btnRevalidar.disabled = true;
-    btnRevalidar.textContent = '⏳ Iniciando...';
-    try {
-      const res  = await fetch(`/revalidar/${jobId}`, { method: 'POST', headers: authHeaders() });
-      const data = await res.json();
-      if (data.jobId) {
-        jobId = data.jobId;
-        document.getElementById('log-box').innerHTML = '';
-        document.getElementById('resultado-wrap').innerHTML = '';
-        document.getElementById('btn-nova').style.display = 'none';
-        setBadge('running', '⟳ Executando');
-        addLogLine({ ts: agora(), msg: '🔄 Revalidação iniciada...', tipo: 'info' });
-        iniciarPolling();
-      }
-    } catch { btnRevalidar.textContent = '❌ Erro ao revalidar'; }
-  };
-  divRevalidar.appendChild(btnRevalidar);
-  if (wrapResultado) wrapResultado.appendChild(divRevalidar);
+  try {
+    const resItens = await fetch(`/resultado-itens/${jobId}`, { headers: authHeaders() });
+    const { itens } = await resItens.json();
+
+    const divRevs = document.createElement('div');
+    divRevs.style.cssText = 'margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;';
+
+    const criarBtnRevalidar = (label, apenas) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.style.cssText = 'background: rgba(255,165,0,0.12); border: 0.5px solid rgba(255,165,0,0.4); color: #f97316; border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: inherit;';
+      btn.onmouseover = () => btn.style.background = 'rgba(255,165,0,0.22)';
+      btn.onmouseout  = () => btn.style.background  = 'rgba(255,165,0,0.12)';
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = '⏳';
+        try {
+          const res  = await fetch(`/revalidar/${jobId}`, {
+            method: 'POST', headers: authHeaders(),
+            body: JSON.stringify({ apenas })
+          });
+          const data = await res.json();
+          if (data.jobId) {
+            jobId = data.jobId;
+            document.getElementById('log-box').innerHTML = '';
+            document.getElementById('resultado-wrap').innerHTML = '';
+            document.getElementById('btn-nova').style.display = 'none';
+            setBadge('running', '⟳ Re-validando');
+            addLogLine({ ts: agora(), msg: `🔄 Re-validando: ${label}`, tipo: 'info' });
+            iniciarPolling();
+          }
+        } catch { btn.textContent = '❌'; }
+      };
+      return btn;
+    };
+
+    // Botões específicos para o que falhou
+    if (itens) {
+      if (itens.tr069 !== 'ok')  divRevs.appendChild(criarBtnRevalidar('🔄 Re-verificar TR-069',       ['tr069']));
+      if (itens.acesso !== 'ok') divRevs.appendChild(criarBtnRevalidar('🔄 Re-verificar Acesso Remoto', ['acesso']));
+      if (itens.docs !== 'ok')   divRevs.appendChild(criarBtnRevalidar('🔄 Re-verificar Velocidade',    ['docs']));
+    }
+
+    // Botão de re-validação completa sempre disponível
+    divRevs.appendChild(criarBtnRevalidar('🔄 Re-validar tudo', []));
+
+    if (wrapResultado) wrapResultado.appendChild(divRevs);
+  } catch {
+    // Fallback sem botões específicos
+  }
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
