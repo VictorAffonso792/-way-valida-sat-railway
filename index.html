@@ -851,6 +851,35 @@ function finalizarJob(data) {
   }
 
   document.getElementById('btn-nova').style.display = 'block';
+
+  // Botão de revalidação
+  const wrapResultado = document.getElementById('resultado-wrap');
+  const divRevalidar = document.createElement('div');
+  divRevalidar.style.cssText = 'margin-top: 10px; text-align: center;';
+  const btnRevalidar = document.createElement('button');
+  btnRevalidar.textContent = '🔄 Validar novamente';
+  btnRevalidar.style.cssText = 'background: rgba(255,255,255,0.08); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); border-radius: var(--border-radius-md); padding: 7px 18px; font-size: 12px; cursor: pointer; font-family: inherit;';
+  btnRevalidar.onmouseover = () => btnRevalidar.style.background = 'rgba(255,255,255,0.14)';
+  btnRevalidar.onmouseout  = () => btnRevalidar.style.background = 'rgba(255,255,255,0.08)';
+  btnRevalidar.onclick = async () => {
+    btnRevalidar.disabled = true;
+    btnRevalidar.textContent = '⏳ Iniciando...';
+    try {
+      const res  = await fetch(`/revalidar/${jobId}`, { method: 'POST', headers: authHeaders() });
+      const data = await res.json();
+      if (data.jobId) {
+        jobId = data.jobId;
+        document.getElementById('log-box').innerHTML = '';
+        document.getElementById('resultado-wrap').innerHTML = '';
+        document.getElementById('btn-nova').style.display = 'none';
+        setBadge('running', '⟳ Executando');
+        addLogLine({ ts: agora(), msg: '🔄 Revalidação iniciada...', tipo: 'info' });
+        iniciarPolling();
+      }
+    } catch { btnRevalidar.textContent = '❌ Erro ao revalidar'; }
+  };
+  divRevalidar.appendChild(btnRevalidar);
+  if (wrapResultado) wrapResultado.appendChild(divRevalidar);
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────

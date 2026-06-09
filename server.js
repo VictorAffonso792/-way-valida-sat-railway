@@ -225,6 +225,22 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // POST /revalidar/:jobId → cria novo job com mesmo textoOS
+  const revalidarMatch = url.match(/^\/revalidar\/(.+)$/);
+  if (req.method === 'POST' && revalidarMatch) {
+    if (!verificarToken(req)) { responder(res, 401, { erro: 'Não autorizado' }); return; }
+    const jobIdOriginal = revalidarMatch[1];
+    const jobOriginal   = jobs.get(jobIdOriginal);
+    if (!jobOriginal || !jobOriginal.textoOS) {
+      responder(res, 404, { erro: 'Job original não encontrado' }); return;
+    }
+    const novoJobId = Date.now().toString();
+    const novoJob   = criarJob(novoJobId, jobOriginal.textoOS);
+    addLog(novoJob, '🔄 Revalidação iniciada...', 'info');
+    responder(res, 200, { ok: true, jobId: novoJobId });
+    return;
+  }
+
   responder(res, 404, { erro: 'Rota não encontrada' });
 });
 
