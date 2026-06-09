@@ -119,7 +119,10 @@ const server = http.createServer((req, res) => {
           job.status = 'aguardando_decisao';
           addLog(job, '⚖️ Laudo gerado — aguardando decisão', 'warn');
         } else if (msg) {
-          job.status = 'running';
+          // Não sobrescreve status final — logs tardios não revertem 'done'/'error'
+          if (job.status !== 'done' && job.status !== 'error') {
+            job.status = 'running';
+          }
           // Guarda imagem base64 se existir
           const entry = { ts: new Date().toLocaleTimeString('pt-BR', { hour12: false }), msg, tipo: tipo || 'info' };
           if (imagem) entry.imagem = imagem;
@@ -148,6 +151,8 @@ const server = http.createServer((req, res) => {
         job.resultado = resultado;
         job.motivo    = motivo || null;
         job.status    = status || 'done';
+        // Persiste imediatamente para garantir que o status 'done' seja lido
+        salvarJobs();
         addLog(job, resultado === 'aprovado' ? '✅ OS Aprovada' : '❌ OS Reprovada',
                resultado === 'aprovado' ? 'success' : 'error');
         responder(res, 200, { ok: true });
