@@ -225,7 +225,33 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // POST /revalidar/:jobId → cria novo job com mesmo textoOS
+  // POST /resultado/:jobId → watcher envia resultado estruturado
+  const resultadoMatch = url.match(/^\/resultado\/(.+)$/);
+  if (req.method === 'POST' && resultadoMatch) {
+    const jobId = resultadoMatch[1];
+    const job   = jobs.get(jobId);
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { resultado } = JSON.parse(body);
+        if (job) {
+          // Parse: "tr069=ok|acesso=falhou|docs=atencao|contrato=123|tipo=manutencao|cliente=..."
+          const itens = {};
+          resultado.split('|').forEach(p => {
+            const [k, v] = p.split('=');
+            if (k && v) itens[k] = decodeURIComponent(v);
+          });
+          job.resultadoItens = itens;
+          salvarJobs();
+        }
+        responder(res, 200, { ok: true });
+      } catch { responder(res, 400, { erro: 'JSON inválido' }); }
+    });
+    return;
+  }
+
+  // POST /revalidar/:jobId → cria novo job re-validando apenas o que falhou
   const revalidarMatch = url.match(/^\/revalidar\/(.+)$/);
   if (req.method === 'POST' && revalidarMatch) {
     if (!verificarToken(req)) { responder(res, 401, { erro: 'Não autorizado' }); return; }
@@ -234,10 +260,35 @@ const server = http.createServer((req, res) => {
     if (!jobOriginal || !jobOriginal.textoOS) {
       responder(res, 404, { erro: 'Job original não encontrado' }); return;
     }
-    const novoJobId = Date.now().toString();
-    const novoJob   = criarJob(novoJobId, jobOriginal.textoOS);
-    addLog(novoJob, '🔄 Revalidação iniciada...', 'info');
-    responder(res, 200, { ok: true, jobId: novoJobId });
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { apenas } = JSON.parse(body || '{}');
+        // Se passaram itens específicos, usa --apenas=; senão re-valida tudo
+        const flagApenas = apenas && apenas.length > 0
+          ? `
+--apenas=${apenas.join(',')}`
+          : '';
+        const novoJobId = Date.now().toString();
+        const novoJob   = criarJob(novoJobId, jobOriginal.textoOS + flagApenas);
+        const descricao = flagApenas
+          ? `🔄 Re-validando: ${apenas.join(', ')}`
+          : '🔄 Re-validação completa iniciada...';
+        addLog(novoJob, descricao, 'info');
+        responder(res, 200, { ok: true, jobId: novoJobId });
+      } catch { responder(res, 400, { erro: 'JSON inválido' }); }
+    });
+    return;
+  }
+
+  // GET /resultado-itens/:jobId → interface busca o que falhou
+  const itensMatch = url.match(/^\/resultado-itens\/(.+)$/);
+  if (req.method === 'GET' && itensMatch) {
+    const jobId = itensMatch[1];
+    const job   = jobs.get(jobId);
+    if (!job) { responder(res, 404, { erro: 'Job não encontrado' }); return; }
+    responder(res, 200, { itens: job.resultadoItens || null });
     return;
   }
 
